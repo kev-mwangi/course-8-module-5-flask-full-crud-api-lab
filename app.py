@@ -60,3 +60,51 @@ def create_event():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+
+
+    from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+# Simulated Database
+events = [
+    {"id": 1, "title": "Tech Meetup"},
+    {"id": 2, "title": "Python Workshop"}
+]
+
+
+# Home Route
+@app.route("/")
+def home():
+    return jsonify({"message": "Welcome to the Event API"})
+
+
+# GET All Events
+@app.route("/events", methods=["GET"])
+def get_events():
+    return jsonify(events)
+
+
+# POST Create Event
+@app.route("/events", methods=["POST"])
+def create_event():
+    data = request.get_json()
+
+    # Validate input
+    if not data or "title" not in data:
+        return jsonify({"error": "Title is required"}), 400
+
+    new_event = {
+        "id": len(events) + 1,
+        "title": data["title"]
+    }
+
+    events.append(new_event)
+
+    return jsonify(new_event), 201
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
