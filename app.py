@@ -2,109 +2,100 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-
-# Simulated Database
+# Simulated data
 class Event:
     def __init__(self, id, title):
         self.id = id
         self.title = title
 
     def to_dict(self):
-        return {
-            "id": self.id,
-            "title": self.title
-        }
+        return {"id": self.id, "title": self.title}
 
-
+# In-memory "database"
 events = [
     Event(1, "Tech Meetup"),
     Event(2, "Python Workshop")
 ]
 
-
-# Home Route
+# Welcome route
 @app.route("/", methods=["GET"])
-def home():
-    return jsonify({
-        "message": "Welcome to the Event API"
-    })
+def welcome():
+    return jsonify({"message": "Welcome to the Event Management API"}), 200
 
-
-# GET All Events
+# Task 1 - Defining the Problem
+# Get all events
 @app.route("/events", methods=["GET"])
 def get_events():
-    return jsonify([event.to_dict() for event in events])
+    return jsonify([event.to_dict() for event in events]), 200
 
+# Task 1 - Defining the Problem
+# Getting a single event by id
+@app.route("/events/<int:event_id>", methods=["GET"])
+def get_event(event_id):
+    target_event = None
+    for event in events:
+        if event.id == event_id:
+            target_event = event
+            break
 
-# POST Create Event
+    if target_event is None:
+        return jsonify({"error": f"Event with id {event_id} not found"}), 404
+
+    return jsonify(target_event.to_dict()), 200
+
+# Task 1 - Defining the Problem
+# Creating a new event from JSON input
 @app.route("/events", methods=["POST"])
 def create_event():
     data = request.get_json()
 
-    # Validate input
     if not data or "title" not in data:
-        return jsonify({
-            "error": "Title is required"
-        }), 400
+        return jsonify({"error": "Missing required field: title"}), 400
 
-    # Generate a new ID
-    new_id = max([event.id for event in events], default=0) + 1
-
-    # Create and store the event
+    new_id = max((e.id for e in events), default=0) + 1
     new_event = Event(new_id, data["title"])
     events.append(new_event)
 
-    # Return the new event with status 201
     return jsonify(new_event.to_dict()), 201
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
-
-
-
-    from flask import Flask, jsonify, request
-
-app = Flask(__name__)
-
-# Simulated Database
-events = [
-    {"id": 1, "title": "Tech Meetup"},
-    {"id": 2, "title": "Python Workshop"}
-]
-
-
-# Home Route
-@app.route("/")
-def home():
-    return jsonify({"message": "Welcome to the Event API"})
-
-
-# GET All Events
-@app.route("/events", methods=["GET"])
-def get_events():
-    return jsonify(events)
-
-
-# POST Create Event
-@app.route("/events", methods=["POST"])
-def create_event():
+# Task 1 - Defining the Problem
+# Updating the title of an existing event
+@app.route("/events/<int:event_id>", methods=["PATCH"])
+def update_event(event_id):
     data = request.get_json()
 
-    # Validate input
     if not data or "title" not in data:
-        return jsonify({"error": "Title is required"}), 400
+        return jsonify({"error": "Missing required field: title"}), 400
 
-    new_event = {
-        "id": len(events) + 1,
-        "title": data["title"]
-    }
+    target_event = None
+    for event in events:
+        if event.id == event_id:
+            target_event = event
+            break
 
-    events.append(new_event)
+    if target_event is None:
+        return jsonify({"error": f"Event with id {event_id} not found"}), 404
 
-    return jsonify(new_event), 201
+    target_event.title = data["title"]
+    return jsonify(target_event.to_dict()), 200
 
+# Task 1 - Defining the Problem
+# Removing an event from the list
+@app.route("/events/<int:event_id>", methods=["DELETE"])
+def delete_event(event_id):
+    global events
+
+    target_event = None
+    for event in events:
+        if event.id == event_id:
+            target_event = event
+            break
+
+    if target_event is None:
+        return jsonify({"error": f"Event with id {event_id} not found"}), 404
+
+    events = [e for e in events if e.id != event_id]
+    return "", 204
 
 if __name__ == "__main__":
     app.run(debug=True)
